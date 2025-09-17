@@ -44,8 +44,8 @@
         }
     </style>
 </head>
-<body class="bg-gray-900 text-gray-200">
-    <div class="container mx-auto p-4 flex flex-col items-center min-h-screen">
+<body class="bg-gray-900 text-gray-200 flex flex-col min-h-screen">
+    <div class="container mx-auto p-4 flex flex-col items-center flex-grow">
         <!-- Seção do cabeçalho com o título e subtítulo da página. -->
         <header class="text-center my-8">
             <h1 class="text-4xl sm:text-5xl font-bold mb-2">Localizador de PDFs</h1>
@@ -95,6 +95,10 @@
                 <p class="text-xl text-gray-400">Nenhum PDF encontrado nesta página.</p>
             </div>
         </main>
+        
+        <footer class="mt-auto w-full text-center py-4 bg-gray-800 text-gray-400 text-sm">
+            <p>© 2024 Thiago Matheus. Todos os direitos reservados.</p>
+        </footer>
     </div>
 
     <!-- Seção de JavaScript para toda a lógica da aplicação. -->
@@ -110,6 +114,17 @@
         const copyAllButton = document.getElementById('copyAllButton');
         const noResults = document.getElementById('noResults');
 
+        function normalizeUrl(url) {
+            try {
+                const urlObj = new URL(url);
+                let normalizedUrl = urlObj.protocol + '//' + urlObj.hostname.replace(/^www\./, '') + urlObj.pathname;
+                return normalizedUrl.endsWith('/') ? normalizedUrl.slice(0, -1) : normalizedUrl;
+            } catch (e) {
+                console.error('Normalização de URL inválida:', url);
+                return url;
+            }
+        }
+        
         // Adiciona um "ouvinte de evento" ao botão de busca. Quando o botão é clicado, a função é executada.
         searchButton.addEventListener('click', async () => {
             const url = urlInput.value.trim();
@@ -144,7 +159,7 @@
 
                 // Encontra todos os elementos `<a>` (links) na página.
                 const links = Array.from(doc.querySelectorAll('a'));
-                const pdfLinks = [];
+                const uniquePdfLinks = new Set();
 
                 // Itera sobre todos os links encontrados.
                 links.forEach(link => {
@@ -154,12 +169,16 @@
                         try {
                             // Converte links relativos (ex: /docs/file.pdf) em links absolutos.
                             const absoluteUrl = new URL(href, url).href;
-                            pdfLinks.push(absoluteUrl);
+                            const normalizedUrl = normalizeUrl(absoluteUrl);
+                            uniquePdfLinks.add(normalizedUrl);
                         } catch (e) {
                             console.error('URL inválida encontrada:', href);
                         }
                     }
                 });
+
+                // Converte o Set de links únicos de volta para um Array.
+                const pdfLinks = Array.from(uniquePdfLinks);
 
                 // Chama a função para exibir os links de PDF encontrados.
                 displayResults(pdfLinks);
